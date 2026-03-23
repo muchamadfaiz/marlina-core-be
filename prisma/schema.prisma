@@ -1,0 +1,379 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                String    @id @default(uuid())
+  email             String    @unique
+  password          String
+
+  roleId            String
+  role              Role      @relation(fields: [roleId], references: [id])
+
+  isActive          Boolean   @default(true)
+  emailVerifiedAt   DateTime?
+  passwordChangedAt DateTime?
+
+  profile                  Profile?
+  refreshTokens            RefreshToken[]
+  files                    File[]
+  attendances              Attendance[]
+  submittedAttendances     Attendance[] @relation("SubmittedAttendances")
+  passwordResetTokens      PasswordResetToken[]
+  emailVerificationTokens  EmailVerificationToken[]
+  ledTeams                 Team[]       @relation("TeamLeader")
+  supervisedTeams          Team[]       @relation("TeamPengawas")
+  teamMemberships          TeamMember[]
+  reports                  Report[]
+  approvedReports          Report[]     @relation("ReportApprover")
+  rejectedReports          Report[]     @relation("ReportRejector")
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  deletedAt         DateTime?
+
+  @@map("users")
+}
+
+model Profile {
+  id        String    @id @default(uuid())
+
+  userId    String    @unique
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  fullName  String
+  phone     String?
+  address   String?
+  avatarUrl String?
+  birthDate DateTime?
+  gender    Gender?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("profiles")
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+model Role {
+  id    String @id @default(uuid())
+  name  String @unique
+
+  users       User[]
+  permissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String  @id @default(uuid())
+  name        String  @unique
+  description String?
+
+  roles RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  id           String @id @default(uuid())
+
+  roleId       String
+  permissionId String
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model File {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+
+  originalName String
+  filename     String
+  url          String
+  mimetype     String
+  size         Int
+
+  attendances  Attendance[]
+  reportPhotos ReportPhoto[]
+  pdfSettings  PdfSetting[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("files")
+}
+
+model Attendance {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+
+  type          String
+  selfieFileId  String
+  selfieFile    File     @relation(fields: [selfieFileId], references: [id])
+  description   String?
+
+  latitude      Float?
+  longitude     Float?
+
+  workLocationId String?
+  workLocation   WorkLocation? @relation(fields: [workLocationId], references: [id])
+
+  submittedById String
+  submittedBy   User     @relation("SubmittedAttendances", fields: [submittedById], references: [id])
+
+  createdAt     DateTime @default(now())
+
+  @@map("attendances")
+}
+
+model OperationalHour {
+  id        String   @id @default(uuid())
+  dayOfWeek Int      @unique
+  startTime String
+  endTime   String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("operational_hours")
+}
+
+model Team {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+
+  leaderId    String
+  leader      User     @relation("TeamLeader", fields: [leaderId], references: [id])
+
+  pengawasId  String?
+  pengawas    User?    @relation("TeamPengawas", fields: [pengawasId], references: [id])
+
+  members            TeamMember[]
+  workLocationAssigns TeamWorkLocation[]
+
+  divisionId  String?
+  division    Division? @relation(fields: [divisionId], references: [id])
+
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("teams")
+}
+
+model TeamMember {
+  id        String   @id @default(uuid())
+
+  teamId    String
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([teamId, userId])
+  @@map("team_members")
+}
+
+model TeamWorkLocation {
+  id              String       @id @default(uuid())
+
+  teamId          String
+  team            Team         @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  workLocationId  String
+  workLocation    WorkLocation @relation("WorkLocationAssigns", fields: [workLocationId], references: [id])
+
+  assignedDate    DateTime     @db.Date
+
+  createdAt       DateTime     @default(now())
+
+  @@unique([teamId, workLocationId, assignedDate])
+  @@map("team_work_locations")
+}
+
+model WorkLocation {
+  id             String              @id @default(uuid())
+  name           String
+  address        String?
+  latitude       Float
+  longitude      Float
+  radius         Int                 @default(30)
+  isActive       Boolean             @default(true)
+  attendances    Attendance[]
+  reportLokasi   ReportLokasi[]
+  teamAssigns    TeamWorkLocation[]  @relation("WorkLocationAssigns")
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  @@map("work_locations")
+}
+
+model Division {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?  @db.Text
+  isActive    Boolean  @default(true)
+
+  teams       Team[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("divisions")
+}
+
+model Report {
+  id                String   @id @default(uuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id])
+
+  title             String
+  content           String   @db.Text
+  status            String   @default("draft") // draft, submitted, approved, rejected
+  reportDate        DateTime @db.Date
+
+  approvedById      String?
+  approvedBy        User?    @relation("ReportApprover", fields: [approvedById], references: [id])
+  approvedAt        DateTime?
+
+  rejectedById      String?
+  rejectedBy        User?    @relation("ReportRejector", fields: [rejectedById], references: [id])
+  rejectedAt        DateTime?
+  rejectionNote     String?  @db.Text
+
+  // New fields for Laporan Kinerja OP
+  weekNumber        Int?
+  deskripsiKegiatan String?  @db.Text
+  kondisiCuaca      String?
+  waktuMulai        String?
+  waktuSelesai      String?
+
+  // Peralatan (7 fixed items)
+  peralatanCangkul  Int      @default(0)
+  peralatanParang   Int      @default(0)
+  peralatanPes      Int      @default(0)
+  peralatanLori     Int      @default(0)
+  peralatanCatut    Int      @default(0)
+  peralatanPalu     Int      @default(0)
+  peralatanGarpu    Int      @default(0)
+
+  // Tenaga kerja (3 fixed items)
+  tenagaPengawas    Int      @default(0)
+  tenagaPekerja     Int      @default(0)
+  tenagaKorlap      Int      @default(0)
+
+  photos            ReportPhoto[]
+  lokasi            ReportLokasi[]
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("reports")
+}
+
+model ReportPhoto {
+  id        String  @id @default(uuid())
+
+  reportId  String
+  report    Report  @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  fileId    String
+  file      File    @relation(fields: [fileId], references: [id])
+
+  order     Int     // 1-8
+  label     String? // "Progress 0%", "Progress 50%", "Progress 100%", "Absen Datang", "Absen Pulang"
+
+  createdAt DateTime @default(now())
+
+  @@unique([reportId, order])
+  @@map("report_photos")
+}
+
+model ReportLokasi {
+  id              String       @id @default(uuid())
+
+  reportId        String
+  report          Report       @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  workLocationId  String
+  workLocation    WorkLocation @relation(fields: [workLocationId], references: [id])
+
+  kegiatan        String       // e.g. "Normalisasi Vegetasi Anak Sungai"
+  panjang         Float        // meter
+  lebar           Float        // meter
+
+  createdAt       DateTime     @default(now())
+
+  @@map("report_lokasi")
+}
+
+model PdfSetting {
+  id    String @id @default(uuid())
+  key   String @unique // logo, signature_1, signature_2, signature_3, signature_4
+  name  String?        // person name (for signatures)
+  title String?        // job title (for signatures)
+
+  fileId String?
+  file   File?  @relation(fields: [fileId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("pdf_settings")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@map("password_reset_tokens")
+}
+
+model EmailVerificationToken {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@map("email_verification_tokens")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  token     String    @unique
+  userId    String
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  expiredAt DateTime
+  createdAt DateTime  @default(now())
+  revokedAt DateTime?
+
+  @@map("refresh_tokens")
+}
