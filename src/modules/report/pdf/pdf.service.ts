@@ -118,7 +118,7 @@ export class PdfService {
         align: 'center',
       });
 
-    const teamName = report.teamName || report.title || 'TIM OP';
+    const teamName = report.teamName || report.title || 'Tim Pendamping Masyarakat';
     doc.text(teamName.toUpperCase(), doc.page.margins.left, doc.y, {
       width: pageWidth,
       align: 'center',
@@ -290,7 +290,7 @@ export class PdfService {
     report: ReportPdfData,
     pageWidth: number,
   ) {
-    const teamName = report.teamName || report.title || 'TIM OP';
+    const teamName = report.teamName || report.title || 'Tim Pendamping Masyarakat';
 
     doc
       .font('Helvetica-Bold')
