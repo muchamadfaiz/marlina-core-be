@@ -238,6 +238,7 @@ export class AttendanceService {
       this.prisma.user.findMany({
         where: {
           isActive: true,
+          deletedAt: null,
           role: { name: { in: ['PETUGAS', 'TEAM_LEADER'] } },
         },
         include: { profile: true, role: true },
