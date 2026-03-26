@@ -143,11 +143,11 @@ export class ReportController {
   @ApiResponse({ status: 200, description: 'PDF preview stream' })
   async previewPdfTemplate(@Res() res: Response) {
     const doc = await this.pdfService.generateReport({
-      title: 'TIM OP BUSET',
+      title: 'Tim Pendamping Masyarakat',
       content: '',
       reportDate: new Date().toISOString().split('T')[0],
       userName: 'Budi Santoso',
-      teamName: 'TIM OP BUSET',
+      teamName: 'Tim Pendamping Masyarakat',
       weekNumber: 1,
       deskripsiKegiatan:
         'Kegiatan Tim Operasional dan Pemeliharaan Sungai Dinas PUPR Kota Palembang di kerjakan Oleh Tim Buset OP Sungai. Detail pekerjaan dapat dilihat pada Tabel dibawah ini :',
@@ -181,7 +181,7 @@ export class ReportController {
 
     res.set({
       'Content-Type': 'application/pdf',
-      'Content-Disposition': 'inline; filename="preview-template.pdf"',
+      'Content-Disposition': 'attachment; filename="preview-template.pdf"',
     });
 
     doc.pipe(res);
