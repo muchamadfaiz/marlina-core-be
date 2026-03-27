@@ -3,6 +3,8 @@ import {
   Controller,
   Get,
   Param,
+  ParseUUIDPipe,
+  Patch,
   Post,
   Query,
 } from '@nestjs/common';
@@ -19,6 +21,7 @@ import { AttendanceService } from './attendance.service';
 import {
   AttendanceResponseDto,
   CreateAttendanceDto,
+  UpdateAttendanceDto,
   DashboardSummaryDto,
 } from './dto';
 
@@ -81,5 +84,25 @@ export class AttendanceController {
   @ResponseMessage('Success get all attendances')
   findAll(@Query() query: PageOptionsDto) {
     return this.attendanceService.findAll(query);
+  }
+
+  @Get(':id')
+  @Roles('ADMIN', 'PENGAWAS')
+  @ApiOperation({ summary: 'Get attendance by ID (Admin & Pengawas)' })
+  @ApiParam({ name: 'id', description: 'Attendance UUID' })
+  @ApiResponse({ status: 200, type: AttendanceResponseDto })
+  @ResponseMessage('Success get attendance')
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.attendanceService.findOne(id);
+  }
+
+  @Patch(':id')
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Update attendance (Admin only)' })
+  @ApiParam({ name: 'id', description: 'Attendance UUID' })
+  @ApiResponse({ status: 200, type: AttendanceResponseDto })
+  @ResponseMessage('Success update attendance')
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateAttendanceDto) {
+    return this.attendanceService.update(id, dto);
   }
 }

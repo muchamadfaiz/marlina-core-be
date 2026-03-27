@@ -5,7 +5,7 @@ import { OperationalHourController } from './operational-hour/operational-hour.c
 import { OperationalHourService } from './operational-hour/operational-hour.service';
 
 @Module({
-  controllers: [AttendanceController, OperationalHourController],
+  controllers: [OperationalHourController, AttendanceController],
   providers: [AttendanceService, OperationalHourService],
 })
 export class AttendanceModule {}

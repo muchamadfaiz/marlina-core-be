@@ -7,7 +7,7 @@ import {
 import { PrismaService } from '../../prisma/prisma.service';
 import { PageOptionsDto } from '../../common/dto/page-options.dto';
 import { PageMetaDto } from '../../common/dto/page-meta.dto';
-import { CreateAttendanceDto, DashboardSummaryDto } from './dto';
+import { CreateAttendanceDto, UpdateAttendanceDto, DashboardSummaryDto } from './dto';
 import { mapAttendanceToResponse } from './mapper/attendance.mapper';
 
 @Injectable()
@@ -174,6 +174,40 @@ export class AttendanceService {
       map[h.dayOfWeek] = { startTime: h.startTime, endTime: h.endTime, isActive: h.isActive };
     }
     return map;
+  }
+
+  async findOne(id: string) {
+    const [attendance, opHours] = await Promise.all([
+      this.prisma.attendance.findUnique({
+        where: { id },
+        include: this.includeRelations,
+      }),
+      this.getOpHoursMap(),
+    ]);
+
+    if (!attendance) throw new NotFoundException('Attendance not found');
+
+    return mapAttendanceToResponse(attendance, opHours);
+  }
+
+  async update(id: string, dto: UpdateAttendanceDto) {
+    const existing = await this.prisma.attendance.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException('Attendance not found');
+
+    const attendance = await this.prisma.attendance.update({
+      where: { id },
+      data: {
+        ...(dto.type !== undefined && { type: dto.type }),
+        ...(dto.description !== undefined && { description: dto.description }),
+        ...(dto.latitude !== undefined && { latitude: dto.latitude }),
+        ...(dto.longitude !== undefined && { longitude: dto.longitude }),
+        ...(dto.createdAt !== undefined && { createdAt: new Date(dto.createdAt) }),
+      },
+      include: this.includeRelations,
+    });
+
+    const opHours = await this.getOpHoursMap();
+    return mapAttendanceToResponse(attendance, opHours);
   }
 
   async findMyAttendances(userId: string, query: PageOptionsDto) {
