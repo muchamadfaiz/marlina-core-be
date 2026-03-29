@@ -21,12 +21,10 @@ COPY --from=build /app/dist ./dist
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/prisma ./prisma
 COPY package.json prisma.config.ts tsconfig.json ./
-COPY docker-entrypoint.sh ./
-
-RUN mkdir -p uploads && chmod +x docker-entrypoint.sh
+RUN mkdir -p uploads
 
 ENV NODE_ENV=production
 
 EXPOSE 3000
 
-ENTRYPOINT ["./docker-entrypoint.sh"]
+CMD ["sh", "-c", "npx prisma migrate deploy && npx tsx prisma/seed.ts && node dist/src/main"]
