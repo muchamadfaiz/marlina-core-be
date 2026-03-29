@@ -18,6 +18,7 @@ export interface ReportPdfData {
   reportDate: string;
   userName: string;
   teamName?: string;
+  formatLaporan?: string;
   weekNumber?: number;
   deskripsiKegiatan?: string;
   kondisiCuaca?: string;
@@ -35,6 +36,14 @@ export interface ReportPdfData {
   tenagaKorlap?: number;
   lokasi?: ReportLokasiData[];
   photos: { url: string; secureUrl?: string; order: number; label?: string }[];
+  signatory1Name?: string;
+  signatory1Title?: string;
+  signatory2Name?: string;
+  signatory2Title?: string;
+  signatory3Name?: string;
+  signatory3Title?: string;
+  signatory4Name?: string;
+  signatory4Title?: string;
   createdAt: Date;
   updatedAt: Date;
 }

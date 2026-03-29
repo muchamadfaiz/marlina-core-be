@@ -213,8 +213,8 @@ model WorkLocation {
   id             String              @id @default(uuid())
   name           String
   address        String?
-  latitude       Float
-  longitude      Float
+  latitude       Float?
+  longitude      Float?
   radius         Int                 @default(30)
   isActive       Boolean             @default(true)
   attendances    Attendance[]
@@ -265,6 +265,21 @@ model Report {
   kondisiCuaca      String?
   waktuMulai        String?
   waktuSelesai      String?
+  formatLaporan     String?  // trashboom, emergency, buset, alber
+
+  // Signatures (4 slots)
+  signatory1Name    String?
+  signatory1Title   String?
+  signatory2Name    String?
+  signatory2Title   String?
+  signatory3Name    String?
+  signatory3Title   String?
+  signatory4Name    String?
+  signatory4Title   String?
+
+  // Alat Berat (for formatLaporan = 'alber')
+  alatBeratNama       String?
+  alatBeratBahanBakar String?
 
   // Peralatan (7 fixed items)
   peralatanCangkul  Int      @default(0)
@@ -313,12 +328,18 @@ model ReportLokasi {
   reportId        String
   report          Report       @relation(fields: [reportId], references: [id], onDelete: Cascade)
 
-  workLocationId  String
-  workLocation    WorkLocation @relation(fields: [workLocationId], references: [id])
+  workLocationId  String?
+  workLocation    WorkLocation? @relation(fields: [workLocationId], references: [id])
 
-  kegiatan        String       // e.g. "Normalisasi Vegetasi Anak Sungai"
-  panjang         Float        // meter
-  lebar           Float        // meter
+  name            String?      // Untuk lokasi manual
+  alamatLengkap   String?      // Detail alamat manual
+  kegiatan        String?      // e.g. "Normalisasi Vegetasi Anak Sungai"
+  panjang         Float?       // meter
+  lebar           Float?       // meter
+  lebarAtas       Float?       // meter
+  lebarBawah      Float?       // meter
+  kedalaman       Float?       // meter
+  sedimen         Float?       // meter
 
   createdAt       DateTime     @default(now())
 

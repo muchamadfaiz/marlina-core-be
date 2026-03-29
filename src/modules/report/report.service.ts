@@ -5,19 +5,24 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { PageOptionsDto } from '../../common/dto/page-options.dto';
 import { PageMetaDto } from '../../common/dto/page-meta.dto';
 import { CreateReportDto } from './dto/create-report.dto';
 import { UpdateReportDto } from './dto/update-report.dto';
 import { ReportResponseDto } from './dto/report-response.dto';
 import { UpsertPdfSettingDto, PdfSettingResponseDto } from './dto/pdf-setting.dto';
+import { ReportQueryDto } from './dto/report-query.dto';
 
 @Injectable()
 export class ReportService {
   constructor(private readonly prisma: PrismaService) {}
 
   private readonly includeRelations = {
-    user: { include: { profile: true } },
+    user: {
+      include: {
+        profile: true,
+        teamMemberships: { include: { team: { include: { division: true } } }, take: 1 },
+      },
+    },
     approvedBy: { include: { profile: true } },
     rejectedBy: { include: { profile: true } },
     photos: {
@@ -75,6 +80,7 @@ export class ReportService {
       id: report.id,
       userId: report.userId,
       userName: report.user?.profile?.fullName || report.user?.email,
+      divisionName: report.user?.teamMemberships?.[0]?.team?.division?.name || undefined,
       title: report.title,
       content: report.content,
       status: report.status,
@@ -92,6 +98,7 @@ export class ReportService {
       kondisiCuaca: report.kondisiCuaca,
       waktuMulai: report.waktuMulai,
       waktuSelesai: report.waktuSelesai,
+      formatLaporan: report.formatLaporan,
       peralatanCangkul: report.peralatanCangkul,
       peralatanParang: report.peralatanParang,
       peralatanPes: report.peralatanPes,
@@ -105,11 +112,17 @@ export class ReportService {
       lokasi: (report.lokasi || []).map((l: any) => ({
         id: l.id,
         workLocationId: l.workLocationId,
-        workLocationName: l.workLocation?.name || '',
-        workLocationAddress: l.workLocation?.address || '',
+        workLocationName: l.workLocation?.name || l.name || '',
+        workLocationAddress: l.workLocation?.address || l.alamatLengkap || '',
+        name: l.name,
+        alamatLengkap: l.alamatLengkap,
         kegiatan: l.kegiatan,
         panjang: l.panjang,
         lebar: l.lebar,
+        lebarAtas: l.lebarAtas,
+        lebarBawah: l.lebarBawah,
+        kedalaman: l.kedalaman,
+        sedimen: l.sedimen,
       })),
       approvedById: report.approvedById || undefined,
       approvedByName: report.approvedBy?.profile?.fullName || report.approvedBy?.email || undefined,
@@ -119,6 +132,14 @@ export class ReportService {
       rejectedAt: report.rejectedAt || undefined,
       rejectionNote: report.rejectionNote || undefined,
       attendancePhotos: attendancePhotos || undefined,
+      signatory1Name: report.signatory1Name,
+      signatory1Title: report.signatory1Title,
+      signatory2Name: report.signatory2Name,
+      signatory2Title: report.signatory2Title,
+      signatory3Name: report.signatory3Name,
+      signatory3Title: report.signatory3Title,
+      signatory4Name: report.signatory4Name,
+      signatory4Title: report.signatory4Title,
       createdAt: report.createdAt,
       updatedAt: report.updatedAt,
     };
@@ -149,14 +170,16 @@ export class ReportService {
       }
     }
 
-    // Validate work location IDs
+    // Validate work location IDs (only if provided)
     if (lokasi?.length) {
-      const wlIds = lokasi.map((l) => l.workLocationId);
-      const wls = await this.prisma.workLocation.findMany({
-        where: { id: { in: wlIds } },
-      });
-      if (wls.length !== new Set(wlIds).size) {
-        throw new BadRequestException('Some work location IDs are invalid');
+      const wlIds = lokasi.map((l) => l.workLocationId).filter(Boolean) as string[];
+      if (wlIds.length > 0) {
+        const wls = await this.prisma.workLocation.findMany({
+          where: { id: { in: wlIds } },
+        });
+        if (wls.length !== new Set(wlIds).size) {
+          throw new BadRequestException('Some work location IDs are invalid');
+        }
       }
     }
 
@@ -182,6 +205,17 @@ export class ReportService {
         tenagaPengawas: data.tenagaPengawas ?? 0,
         tenagaPekerja: data.tenagaPekerja ?? 0,
         tenagaKorlap: data.tenagaKorlap ?? 0,
+        formatLaporan: data.formatLaporan,
+        alatBeratNama: data.alatBeratNama,
+        alatBeratBahanBakar: data.alatBeratBahanBakar,
+        signatory1Name: data.signatory1Name,
+        signatory1Title: data.signatory1Title,
+        signatory2Name: data.signatory2Name,
+        signatory2Title: data.signatory2Title,
+        signatory3Name: data.signatory3Name,
+        signatory3Title: data.signatory3Title,
+        signatory4Name: data.signatory4Name,
+        signatory4Title: data.signatory4Title,
         photos: photoFileIds?.length
           ? {
               create: photoFileIds.map((fileId, index) => ({
@@ -194,10 +228,16 @@ export class ReportService {
         lokasi: lokasi?.length
           ? {
               create: lokasi.map((l) => ({
-                workLocationId: l.workLocationId,
+                workLocationId: l.workLocationId || null,
+                name: l.name,
+                alamatLengkap: l.alamatLengkap,
                 kegiatan: l.kegiatan,
                 panjang: l.panjang,
                 lebar: l.lebar,
+                lebarAtas: l.lebarAtas,
+                lebarBawah: l.lebarBawah,
+                kedalaman: l.kedalaman,
+                sedimen: l.sedimen,
               })),
             }
           : undefined,
@@ -209,11 +249,45 @@ export class ReportService {
     return this.mapToResponse(report, baseUrl, attPhotos);
   }
 
+  private buildReportWhere(query: ReportQueryDto, extra: Record<string, any> = {}) {
+    const andConditions: any[] = [];
+
+    if (query.date) {
+      const start = new Date(`${query.date}T00:00:00.000Z`);
+      const end = new Date(`${query.date}T23:59:59.999Z`);
+      andConditions.push({ reportDate: { gte: start, lte: end } });
+    }
+
+    if (query.status) {
+      andConditions.push({ status: query.status });
+    }
+
+    if (query.divisionId) {
+      andConditions.push({
+        user: {
+          OR: [
+            { teamMemberships: { some: { team: { divisionId: query.divisionId } } } },
+            { ledTeams: { some: { divisionId: query.divisionId } } },
+          ],
+        },
+      });
+    }
+
+    if (query.formatLaporan) {
+      andConditions.push({ formatLaporan: query.formatLaporan });
+    }
+
+    return {
+      ...extra,
+      ...(andConditions.length ? { AND: andConditions } : {}),
+    };
+  }
+
   async findAll(
-    query: PageOptionsDto,
+    query: ReportQueryDto,
     baseUrl: string,
   ): Promise<{ data: ReportResponseDto[]; meta: PageMetaDto }> {
-    const where = {};
+    const where = this.buildReportWhere(query);
     const orderBy = query.sortBy
       ? { [query.sortBy]: query.order }
       : { createdAt: query.order };
@@ -241,10 +315,10 @@ export class ReportService {
 
   async findMine(
     userId: string,
-    query: PageOptionsDto,
+    query: ReportQueryDto,
     baseUrl: string,
   ): Promise<{ data: ReportResponseDto[]; meta: PageMetaDto }> {
-    const where = { userId };
+    const where = this.buildReportWhere(query, { userId });
     const orderBy = query.sortBy
       ? { [query.sortBy]: query.order }
       : { createdAt: query.order };
@@ -296,19 +370,20 @@ export class ReportService {
     }
 
     // Only draft/rejected can be updated (unless admin)
-    if (!['draft', 'rejected'].includes(existing.status) && userRole !== 'ADMIN') {
-      throw new ForbiddenException('Hanya laporan draft atau yang ditolak yang bisa diedit');
-    }
+    // if (!['draft', 'rejected'].includes(existing.status) && userRole !== 'ADMIN') {
+    //   throw new ForbiddenException('Hanya laporan draft atau yang ditolak yang bisa diedit');
+    // }
 
-    // Deadline: only today's reports can be edited (unless admin)
-    if (userRole !== 'ADMIN') {
-      const today = this.getTodayDate();
-      const reportDate = new Date(existing.reportDate);
-      reportDate.setUTCHours(0, 0, 0, 0);
-      if (reportDate.getTime() !== today.getTime()) {
-        throw new ForbiddenException('Hanya laporan hari ini yang bisa diedit');
-      }
-    }
+    // Deadline: only today's reports can be edited (unless admin/team_leader/pengawas)
+    const editAllowedRoles = ['ADMIN', 'team_leader', 'pengawas'];
+    // if (!editAllowedRoles.includes(userRole)) {
+    //   const today = this.getTodayDate();
+    //   const reportDate = new Date(existing.reportDate);
+    //   reportDate.setUTCHours(0, 0, 0, 0);
+    //   if (reportDate.getTime() !== today.getTime()) {
+    //     throw new ForbiddenException('Hanya laporan hari ini yang bisa diedit');
+    //   }
+    // }
 
     const { photoFileIds, photoLabels, lokasi, ...data } = dto;
 
@@ -340,20 +415,28 @@ export class ReportService {
     if (lokasi !== undefined) {
       await this.prisma.reportLokasi.deleteMany({ where: { reportId: id } });
       if (lokasi.length) {
-        const wlIds = lokasi.map((l) => l.workLocationId);
-        const wls = await this.prisma.workLocation.findMany({
-          where: { id: { in: wlIds } },
-        });
-        if (wls.length !== new Set(wlIds).size) {
-          throw new BadRequestException('Some work location IDs are invalid');
+        const wlIds = lokasi.map((l) => l.workLocationId).filter(Boolean) as string[];
+        if (wlIds.length > 0) {
+          const wls = await this.prisma.workLocation.findMany({
+            where: { id: { in: wlIds } },
+          });
+          if (wls.length !== new Set(wlIds).size) {
+            throw new BadRequestException('Some work location IDs are invalid');
+          }
         }
         await this.prisma.reportLokasi.createMany({
           data: lokasi.map((l) => ({
             reportId: id,
-            workLocationId: l.workLocationId,
+            workLocationId: l.workLocationId || null,
+            name: l.name,
+            alamatLengkap: l.alamatLengkap,
             kegiatan: l.kegiatan,
             panjang: l.panjang,
             lebar: l.lebar,
+            lebarAtas: l.lebarAtas,
+            lebarBawah: l.lebarBawah,
+            kedalaman: l.kedalaman,
+            sedimen: l.sedimen,
           })),
         });
       }
@@ -371,12 +454,15 @@ export class ReportService {
         ...(data.content !== undefined && { content: data.content }),
         ...(data.status !== undefined && { status: data.status }),
         ...clearRejection,
-        // reportDate is locked — cannot be changed after creation
+        ...(data.reportDate ? { reportDate: new Date(data.reportDate) } : {}),
         ...(data.weekNumber !== undefined && { weekNumber: data.weekNumber }),
         ...(data.deskripsiKegiatan !== undefined && { deskripsiKegiatan: data.deskripsiKegiatan }),
         ...(data.kondisiCuaca !== undefined && { kondisiCuaca: data.kondisiCuaca }),
         ...(data.waktuMulai !== undefined && { waktuMulai: data.waktuMulai }),
         ...(data.waktuSelesai !== undefined && { waktuSelesai: data.waktuSelesai }),
+        ...(data.formatLaporan !== undefined && { formatLaporan: data.formatLaporan }),
+        ...(data.alatBeratNama !== undefined && { alatBeratNama: data.alatBeratNama }),
+        ...(data.alatBeratBahanBakar !== undefined && { alatBeratBahanBakar: data.alatBeratBahanBakar }),
         ...(data.peralatanCangkul !== undefined && { peralatanCangkul: data.peralatanCangkul }),
         ...(data.peralatanParang !== undefined && { peralatanParang: data.peralatanParang }),
         ...(data.peralatanPes !== undefined && { peralatanPes: data.peralatanPes }),
@@ -387,6 +473,14 @@ export class ReportService {
         ...(data.tenagaPengawas !== undefined && { tenagaPengawas: data.tenagaPengawas }),
         ...(data.tenagaPekerja !== undefined && { tenagaPekerja: data.tenagaPekerja }),
         ...(data.tenagaKorlap !== undefined && { tenagaKorlap: data.tenagaKorlap }),
+        ...(data.signatory1Name !== undefined && { signatory1Name: data.signatory1Name }),
+        ...(data.signatory1Title !== undefined && { signatory1Title: data.signatory1Title }),
+        ...(data.signatory2Name !== undefined && { signatory2Name: data.signatory2Name }),
+        ...(data.signatory2Title !== undefined && { signatory2Title: data.signatory2Title }),
+        ...(data.signatory3Name !== undefined && { signatory3Name: data.signatory3Name }),
+        ...(data.signatory3Title !== undefined && { signatory3Title: data.signatory3Title }),
+        ...(data.signatory4Name !== undefined && { signatory4Name: data.signatory4Name }),
+        ...(data.signatory4Title !== undefined && { signatory4Title: data.signatory4Title }),
       },
       include: this.includeRelations,
     });
@@ -460,7 +554,7 @@ export class ReportService {
 
   async findByTeams(
     pengawasUserId: string,
-    query: PageOptionsDto,
+    query: ReportQueryDto,
     baseUrl: string,
   ): Promise<{ data: ReportResponseDto[]; meta: PageMetaDto }> {
     // Find all teams supervised by this pengawas
@@ -480,7 +574,7 @@ export class ReportService {
     // Also include the pengawas's own reports
     userIds.add(pengawasUserId);
 
-    const where = { userId: { in: Array.from(userIds) } };
+    const where = this.buildReportWhere(query, { userId: { in: Array.from(userIds) } });
     const orderBy = query.sortBy
       ? { [query.sortBy]: query.order }
       : { createdAt: query.order };

@@ -5,9 +5,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { PageOptionsDto } from '../../common/dto/page-options.dto';
 import { PageMetaDto } from '../../common/dto/page-meta.dto';
-import { CreateAttendanceDto, UpdateAttendanceDto, DashboardSummaryDto } from './dto';
+import { AdminCreateAttendanceDto, CreateAttendanceDto, DashboardSummaryDto, AttendanceQueryDto, UpdateAttendanceDto } from './dto';
 import { mapAttendanceToResponse } from './mapper/attendance.mapper';
 
 @Injectable()
@@ -131,17 +130,25 @@ export class AttendanceService {
         throw new NotFoundException('Work location not found');
       }
 
-      const distance = this.haversineDistance(
-        dto.latitude,
-        dto.longitude,
-        workLocation.latitude,
-        workLocation.longitude,
-      );
+      // Skip radius check if:
+      // 1. Attendance is manual (latitude & longitude are 0)
+      // 2. Work Location is manual (latitude & longitude are null)
+      const isManualAttendance = dto.latitude === 0 && dto.longitude === 0;
+      const isManualWorkLocation = workLocation.latitude === null || workLocation.longitude === null;
 
-      if (distance > workLocation.radius) {
-        throw new BadRequestException(
-          `Anda berada ${Math.round(distance)} meter dari lokasi kerja "${workLocation.name}". Maksimal radius ${workLocation.radius} meter.`,
+      if (!isManualAttendance && !isManualWorkLocation) {
+        const distance = this.haversineDistance(
+          dto.latitude,
+          dto.longitude,
+          workLocation.latitude!,
+          workLocation.longitude!,
         );
+
+        if (distance > workLocation.radius) {
+          throw new BadRequestException(
+            `Anda berada ${Math.round(distance)} meter dari lokasi kerja "${workLocation.name}". Maksimal radius ${workLocation.radius} meter.`,
+          );
+        }
       }
     }
 
@@ -162,6 +169,79 @@ export class AttendanceService {
     return mapAttendanceToResponse(attendance);
   }
 
+  async adminCreate(dto: AdminCreateAttendanceDto, submittedById: string) {
+    // 1. Validate user exists
+    const user = await this.prisma.user.findUnique({
+      where: { id: dto.userId },
+    });
+    if (!user) throw new NotFoundException('User not found');
+
+    // 2. Check duplicate on target date
+    const targetDate = dto.createdAt ? new Date(dto.createdAt) : new Date();
+    const startOfDay = new Date(targetDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(targetDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const existing = await this.prisma.attendance.findFirst({
+      where: {
+        userId: dto.userId,
+        type: dto.type,
+        createdAt: { gte: startOfDay, lte: endOfDay },
+      },
+    });
+
+    if (existing) {
+      throw new BadRequestException(
+        `User sudah memiliki record ${dto.type} pada tanggal tersebut`,
+      );
+    }
+
+    // 3. If CHECK_OUT, ensure CHECK_IN exists on the same day
+    if (dto.type === 'CHECK_OUT') {
+      const checkIn = await this.prisma.attendance.findFirst({
+        where: {
+          userId: dto.userId,
+          type: 'CHECK_IN',
+          createdAt: { gte: startOfDay, lte: endOfDay },
+        },
+      });
+
+      if (!checkIn) {
+        throw new BadRequestException(
+          'Tidak bisa CHECK_OUT tanpa CHECK_IN di hari yang sama',
+        );
+      }
+    }
+
+    // 4. Validate selfie file if provided
+    if (dto.selfieFileId) {
+      const file = await this.prisma.file.findUnique({
+        where: { id: dto.selfieFileId },
+      });
+      if (!file) throw new NotFoundException('Selfie file not found');
+    }
+
+    // 5. Create attendance (skip operational hour & GPS radius validation)
+    const attendance = await this.prisma.attendance.create({
+      data: {
+        userId: dto.userId,
+        type: dto.type,
+        selfieFileId: dto.selfieFileId || '',
+        description: dto.description,
+        latitude: dto.latitude ?? 0,
+        longitude: dto.longitude ?? 0,
+        workLocationId: dto.workLocationId,
+        submittedById,
+        ...(dto.createdAt && { createdAt: new Date(dto.createdAt) }),
+      },
+      include: this.includeRelations,
+    });
+
+    const opHours = await this.getOpHoursMap();
+    return mapAttendanceToResponse(attendance, opHours);
+  }
+
   private readonly includeRelations = {
     user: { include: { profile: true } },
     workLocation: true,
@@ -177,41 +257,46 @@ export class AttendanceService {
   }
 
   async findOne(id: string) {
-    const [attendance, opHours] = await Promise.all([
-      this.prisma.attendance.findUnique({
-        where: { id },
-        include: this.includeRelations,
-      }),
-      this.getOpHoursMap(),
-    ]);
-
-    if (!attendance) throw new NotFoundException('Attendance not found');
-
-    return mapAttendanceToResponse(attendance, opHours);
-  }
-
-  async update(id: string, dto: UpdateAttendanceDto) {
-    const existing = await this.prisma.attendance.findUnique({ where: { id } });
-    if (!existing) throw new NotFoundException('Attendance not found');
-
-    const attendance = await this.prisma.attendance.update({
+    const attendance = await this.prisma.attendance.findUnique({
       where: { id },
-      data: {
-        ...(dto.type !== undefined && { type: dto.type }),
-        ...(dto.description !== undefined && { description: dto.description }),
-        ...(dto.latitude !== undefined && { latitude: dto.latitude }),
-        ...(dto.longitude !== undefined && { longitude: dto.longitude }),
-        ...(dto.createdAt !== undefined && { createdAt: new Date(dto.createdAt) }),
-      },
       include: this.includeRelations,
     });
-
+    if (!attendance) throw new NotFoundException('Attendance not found');
     const opHours = await this.getOpHoursMap();
     return mapAttendanceToResponse(attendance, opHours);
   }
 
-  async findMyAttendances(userId: string, query: PageOptionsDto) {
-    const where = { userId };
+  async update(id: string, dto: UpdateAttendanceDto, userId: string) {
+    const attendance = await this.prisma.attendance.findUnique({
+      where: { id },
+    });
+    if (!attendance) throw new NotFoundException('Attendance not found');
+
+    const dataToUpdate: any = {};
+    if (dto.type !== undefined) dataToUpdate.type = dto.type;
+    if (dto.description !== undefined) dataToUpdate.description = dto.description;
+    if (dto.latitude !== undefined) dataToUpdate.latitude = dto.latitude;
+    if (dto.longitude !== undefined) dataToUpdate.longitude = dto.longitude;
+    if (dto.createdAt !== undefined) dataToUpdate.createdAt = new Date(dto.createdAt);
+
+    const updated = await this.prisma.attendance.update({
+      where: { id },
+      data: dataToUpdate,
+      include: this.includeRelations,
+    });
+
+    const opHours = await this.getOpHoursMap();
+    return mapAttendanceToResponse(updated, opHours);
+  }
+
+  async findMyAttendances(userId: string, query: AttendanceQueryDto) {
+    const where: any = { userId };
+    if (query.date) {
+      const [year, month, day] = query.date.split('-').map(Number);
+      const startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0);
+      const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
+      where.createdAt = { gte: startOfDay, lte: endOfDay };
+    }
     const orderBy = query.sortBy
       ? { [query.sortBy]: query.order }
       : { createdAt: query.order };
@@ -233,8 +318,14 @@ export class AttendanceService {
     return { data, meta };
   }
 
-  async findAll(query: PageOptionsDto) {
-    const where = {};
+  async findAll(query: AttendanceQueryDto) {
+    const where: any = {};
+    if (query.date) {
+      const [year, month, day] = query.date.split('-').map(Number);
+      const startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0);
+      const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
+      where.createdAt = { gte: startOfDay, lte: endOfDay };
+    }
     const orderBy = query.sortBy
       ? { [query.sortBy]: query.order }
       : { createdAt: query.order };
@@ -254,6 +345,13 @@ export class AttendanceService {
     const data = attendances.map((a) => mapAttendanceToResponse(a, opHours));
     const meta = new PageMetaDto({ page: query.page, limit: query.limit, totalData });
     return { data, meta };
+  }
+
+  async remove(id: string) {
+    const existing = await this.prisma.attendance.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException('Attendance not found');
+
+    await this.prisma.attendance.delete({ where: { id } });
   }
 
   async getDashboardSummary(): Promise<DashboardSummaryDto> {

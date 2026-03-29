@@ -11,18 +11,25 @@ export class ReportPhotoDto {
 
 export class ReportLokasiResponseDto {
   @ApiProperty() id: string;
-  @ApiProperty() workLocationId: string;
+  @ApiPropertyOptional() workLocationId?: string;
   @ApiPropertyOptional() workLocationName?: string;
   @ApiPropertyOptional() workLocationAddress?: string;
-  @ApiProperty() kegiatan: string;
-  @ApiProperty() panjang: number;
-  @ApiProperty() lebar: number;
+  @ApiPropertyOptional() name?: string;
+  @ApiPropertyOptional() alamatLengkap?: string;
+  @ApiPropertyOptional() kegiatan?: string;
+  @ApiPropertyOptional() panjang?: number;
+  @ApiPropertyOptional() lebar?: number;
+  @ApiPropertyOptional() lebarAtas?: number;
+  @ApiPropertyOptional() lebarBawah?: number;
+  @ApiPropertyOptional() kedalaman?: number;
+  @ApiPropertyOptional() sedimen?: number;
 }
 
 export class ReportResponseDto {
   @ApiProperty() id: string;
   @ApiProperty() userId: string;
   @ApiPropertyOptional() userName?: string;
+  @ApiPropertyOptional() divisionName?: string;
   @ApiProperty() title: string;
   @ApiProperty() content: string;
   @ApiProperty() status: string;
@@ -35,6 +42,7 @@ export class ReportResponseDto {
   @ApiPropertyOptional() kondisiCuaca?: string;
   @ApiPropertyOptional() waktuMulai?: string;
   @ApiPropertyOptional() waktuSelesai?: string;
+  @ApiPropertyOptional() formatLaporan?: string;
 
   @ApiPropertyOptional() peralatanCangkul?: number;
   @ApiPropertyOptional() peralatanParang?: number;
@@ -49,6 +57,15 @@ export class ReportResponseDto {
   @ApiPropertyOptional() tenagaKorlap?: number;
 
   @ApiPropertyOptional({ type: [ReportLokasiResponseDto] }) lokasi?: ReportLokasiResponseDto[];
+
+  @ApiPropertyOptional() signatory1Name?: string;
+  @ApiPropertyOptional() signatory1Title?: string;
+  @ApiPropertyOptional() signatory2Name?: string;
+  @ApiPropertyOptional() signatory2Title?: string;
+  @ApiPropertyOptional() signatory3Name?: string;
+  @ApiPropertyOptional() signatory3Title?: string;
+  @ApiPropertyOptional() signatory4Name?: string;
+  @ApiPropertyOptional() signatory4Title?: string;
 
   @ApiPropertyOptional() approvedById?: string;
   @ApiPropertyOptional() approvedByName?: string;

@@ -15,113 +15,165 @@ import {
 import { Type } from 'class-transformer';
 
 export class ReportLokasiDto {
-  @ApiProperty({ description: 'Work location ID' })
+  @ApiPropertyOptional({ description: 'Work location ID' })
+  @IsOptional()
   @IsUUID('4')
-  workLocationId: string;
+  workLocationId?: string;
 
-  @ApiProperty({ description: 'Kegiatan', example: 'Normalisasi Vegetasi Anak Sungai' })
+  @ApiPropertyOptional({ description: 'Manual location name (if workLocationId is null)' })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  kegiatan: string;
+  name?: string;
 
-  @ApiProperty({ description: 'Panjang (meter)', example: 57 })
+  @ApiPropertyOptional({ description: 'Alamat lengkap pekerjaan' })
+  @IsOptional()
+  @IsString()
+  alamatLengkap?: string;
+
+  @ApiPropertyOptional({ description: 'Kegiatan', example: 'Normalisasi Vegetasi Anak Sungai' })
+  @IsOptional()
+  @IsString()
+  kegiatan?: string;
+
+  @ApiPropertyOptional({ description: 'Panjang (meter)', example: 57 })
+  @IsOptional()
   @IsNumber()
   @Min(0)
-  panjang: number;
+  @Type(() => Number)
+  panjang?: number;
 
-  @ApiProperty({ description: 'Lebar (meter)', example: 4 })
+  @ApiPropertyOptional({ description: 'Lebar (meter)', example: 4 })
+  @IsOptional()
   @IsNumber()
   @Min(0)
-  lebar: number;
+  @Type(() => Number)
+  lebar?: number;
+
+  @ApiPropertyOptional({ description: 'Lebar Atas (meter)' })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Type(() => Number)
+  lebarAtas?: number;
+
+  @ApiPropertyOptional({ description: 'Lebar Bawah (meter)' })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Type(() => Number)
+  lebarBawah?: number;
+
+  @ApiPropertyOptional({ description: 'Kedalaman (meter)', example: 1.5 })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Type(() => Number)
+  kedalaman?: number;
+
+  @ApiPropertyOptional({ description: 'Sedimen (meter)', example: 0.5 })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Type(() => Number)
+  sedimen?: number;
 }
 
 export class CreateReportDto {
-  @ApiProperty({ description: 'Report title', example: 'Laporan Kinerja TIM OP BUSET' })
+  @ApiProperty({ example: 'Laporan Harian 27-03-2026' })
   @IsString()
   @IsNotEmpty()
   title: string;
 
-  @ApiProperty({ description: 'Report content (HTML)', example: '<p>Isi laporan...</p>' })
+  @ApiProperty({ example: 'Detail kegiatan hari ini...' })
   @IsString()
   @IsNotEmpty()
   content: string;
 
-  @ApiPropertyOptional({
-    description: 'Report status',
-    enum: ['draft', 'submitted'],
-    default: 'draft',
-  })
+  @ApiPropertyOptional({ enum: ['draft', 'submitted'], default: 'draft' })
   @IsOptional()
   @IsString()
   status?: string;
 
-  @ApiProperty({ description: 'Report date (YYYY-MM-DD)', example: '2026-03-15' })
-  @IsDateString()
+  @ApiProperty({ example: '2026-03-27' })
+  @IsString()
+  @IsNotEmpty()
   reportDate: string;
 
-  @ApiPropertyOptional({
-    description: 'Array of uploaded file IDs (max 8)',
-    example: ['uuid-1', 'uuid-2'],
-  })
+  @ApiPropertyOptional({ type: [String] })
   @IsOptional()
   @IsArray()
-  @ArrayMaxSize(8)
-  @IsUUID('4', { each: true })
+  @IsString({ each: true })
   photoFileIds?: string[];
 
-  @ApiPropertyOptional({ description: 'Photo labels', example: ['Progress 0%', 'Progress 0%'] })
+  @ApiPropertyOptional({ type: [String] })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
   photoLabels?: string[];
 
-  // --- New fields for Laporan Kinerja OP ---
-
-  @ApiPropertyOptional({ description: 'Minggu ke' })
+  // New fields for Laporan Kinerja OP
+  @ApiPropertyOptional({ example: 1 })
   @IsOptional()
-  @IsInt()
+  @IsNumber()
   @Type(() => Number)
   weekNumber?: number;
 
-  @ApiPropertyOptional({ description: 'Deskripsi kegiatan' })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   deskripsiKegiatan?: string;
 
-  @ApiPropertyOptional({ description: 'Kondisi cuaca', example: 'Cuaca Cerah' })
+  @ApiPropertyOptional({ example: 'Cuaca Cerah' })
   @IsOptional()
   @IsString()
   kondisiCuaca?: string;
 
-  @ApiPropertyOptional({ description: 'Waktu mulai', example: '08:00' })
+  @ApiPropertyOptional({ example: '08:00' })
   @IsOptional()
   @IsString()
   waktuMulai?: string;
 
-  @ApiPropertyOptional({ description: 'Waktu selesai', example: '15:00' })
+  @ApiPropertyOptional({ example: '15:00' })
   @IsOptional()
   @IsString()
   waktuSelesai?: string;
 
-  // Peralatan
-  @ApiPropertyOptional() @IsOptional() @IsInt() @Type(() => Number) peralatanCangkul?: number;
-  @ApiPropertyOptional() @IsOptional() @IsInt() @Type(() => Number) peralatanParang?: number;
-  @ApiPropertyOptional() @IsOptional() @IsInt() @Type(() => Number) peralatanPes?: number;
-  @ApiPropertyOptional() @IsOptional() @IsInt() @Type(() => Number) peralatanLori?: number;
-  @ApiPropertyOptional() @IsOptional() @IsInt() @Type(() => Number) peralatanCatut?: number;
-  @ApiPropertyOptional() @IsOptional() @IsInt() @Type(() => Number) peralatanPalu?: number;
-  @ApiPropertyOptional() @IsOptional() @IsInt() @Type(() => Number) peralatanGarpu?: number;
+  @ApiPropertyOptional({ example: 'trashboom' })
+  @IsOptional()
+  @IsString()
+  formatLaporan?: string;
 
-  // Tenaga kerja
-  @ApiPropertyOptional() @IsOptional() @IsInt() @Type(() => Number) tenagaPengawas?: number;
-  @ApiPropertyOptional() @IsOptional() @IsInt() @Type(() => Number) tenagaPekerja?: number;
-  @ApiPropertyOptional() @IsOptional() @IsInt() @Type(() => Number) tenagaKorlap?: number;
+  // Alat Berat (for formatLaporan = 'alber')
+  @ApiPropertyOptional({ example: 'PC 75' }) @IsOptional() @IsString() alatBeratNama?: string;
+  @ApiPropertyOptional({ example: 'SOLAR INDUSTRI' }) @IsOptional() @IsString() alatBeratBahanBakar?: string;
 
-  // Lokasi
-  @ApiPropertyOptional({ description: 'Array of lokasi entries', type: [ReportLokasiDto] })
+  // Peralatan (optional)
+  @ApiPropertyOptional() @IsOptional() @IsNumber() @Type(() => Number) peralatanCangkul?: number;
+  @ApiPropertyOptional() @IsOptional() @IsNumber() @Type(() => Number) peralatanParang?: number;
+  @ApiPropertyOptional() @IsOptional() @IsNumber() @Type(() => Number) peralatanPes?: number;
+  @ApiPropertyOptional() @IsOptional() @IsNumber() @Type(() => Number) peralatanLori?: number;
+  @ApiPropertyOptional() @IsOptional() @IsNumber() @Type(() => Number) peralatanCatut?: number;
+  @ApiPropertyOptional() @IsOptional() @IsNumber() @Type(() => Number) peralatanPalu?: number;
+  @ApiPropertyOptional() @IsOptional() @IsNumber() @Type(() => Number) peralatanGarpu?: number;
+
+  // Tenaga kerja (optional)
+  @ApiPropertyOptional() @IsOptional() @IsNumber() @Type(() => Number) tenagaPengawas?: number;
+  @ApiPropertyOptional() @IsOptional() @IsNumber() @Type(() => Number) tenagaPekerja?: number;
+  @ApiPropertyOptional() @IsOptional() @IsNumber() @Type(() => Number) tenagaKorlap?: number;
+
+  @ApiPropertyOptional({ type: [ReportLokasiDto] })
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ReportLokasiDto)
   lokasi?: ReportLokasiDto[];
+
+  @ApiPropertyOptional() @IsOptional() @IsString() signatory1Name?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() signatory1Title?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() signatory2Name?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() signatory2Title?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() signatory3Name?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() signatory3Title?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() signatory4Name?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() signatory4Title?: string;
 }

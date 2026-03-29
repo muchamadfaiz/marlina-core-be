@@ -1,11 +1,14 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
-  Patch,
   Post,
+  Patch,
   Query,
 } from '@nestjs/common';
 import {
@@ -16,13 +19,14 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { CurrentUser, ResponseMessage, Roles } from '../../common';
-import { PageOptionsDto } from '../../common/dto/page-options.dto';
 import { AttendanceService } from './attendance.service';
 import {
+  AdminCreateAttendanceDto,
   AttendanceResponseDto,
   CreateAttendanceDto,
-  UpdateAttendanceDto,
   DashboardSummaryDto,
+  AttendanceQueryDto,
+  UpdateAttendanceDto,
 } from './dto';
 
 @ApiBearerAuth()
@@ -66,13 +70,26 @@ export class AttendanceController {
     return this.attendanceService.create(dto, targetUserId, submittedById);
   }
 
+  @Post('admin-create')
+  @Roles('ADMIN')
+  @ApiOperation({ summary: 'Create attendance by admin (skip time & GPS validation)' })
+  @ApiResponse({ status: 201, type: AttendanceResponseDto })
+  @ApiResponse({ status: 400, description: 'Duplicate or validation error' })
+  @ResponseMessage('Success create attendance by admin')
+  adminCreate(
+    @Body() dto: AdminCreateAttendanceDto,
+    @CurrentUser('id') adminId: string,
+  ) {
+    return this.attendanceService.adminCreate(dto, adminId);
+  }
+
   @Get('me')
   @ApiOperation({ summary: 'Get my attendance history' })
   @ApiResponse({ status: 200, type: [AttendanceResponseDto] })
   @ResponseMessage('Success get my attendances')
   findMine(
     @CurrentUser('id') userId: string,
-    @Query() query: PageOptionsDto,
+    @Query() query: AttendanceQueryDto,
   ) {
     return this.attendanceService.findMyAttendances(userId, query);
   }
@@ -82,27 +99,37 @@ export class AttendanceController {
   @ApiOperation({ summary: 'Get all attendance records (Admin & Pengawas)' })
   @ApiResponse({ status: 200, type: [AttendanceResponseDto] })
   @ResponseMessage('Success get all attendances')
-  findAll(@Query() query: PageOptionsDto) {
+  findAll(@Query() query: AttendanceQueryDto) {
     return this.attendanceService.findAll(query);
   }
-
   @Get(':id')
-  @Roles('ADMIN', 'PENGAWAS')
-  @ApiOperation({ summary: 'Get attendance by ID (Admin & Pengawas)' })
-  @ApiParam({ name: 'id', description: 'Attendance UUID' })
+  @ApiOperation({ summary: 'Get single attendance by ID' })
   @ApiResponse({ status: 200, type: AttendanceResponseDto })
-  @ResponseMessage('Success get attendance')
+  @ResponseMessage('Success get attendance detail')
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.attendanceService.findOne(id);
   }
 
   @Patch(':id')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Update attendance (Admin only)' })
-  @ApiParam({ name: 'id', description: 'Attendance UUID' })
+  @ApiOperation({ summary: 'Update attendance record (All users temporary)' })
   @ApiResponse({ status: 200, type: AttendanceResponseDto })
   @ResponseMessage('Success update attendance')
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateAttendanceDto) {
-    return this.attendanceService.update(id, dto);
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateAttendanceDto,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.attendanceService.update(id, dto, userId);
+  }
+
+  @Delete(':id')
+  @Roles('ADMIN')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete attendance record (Admin only)' })
+  @ApiParam({ name: 'id', description: 'Attendance UUID' })
+  @ApiResponse({ status: 204, description: 'Attendance deleted' })
+  @ResponseMessage('Success delete attendance')
+  remove(@Param('id', ParseUUIDPipe) id: string) {
+    return this.attendanceService.remove(id);
   }
 }

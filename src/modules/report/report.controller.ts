@@ -22,7 +22,6 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { CurrentUser, ResponseMessage, Roles } from '../../common';
-import { PageOptionsDto } from '../../common/dto/page-options.dto';
 import { ReportService } from './report.service';
 import { PdfService } from './pdf/pdf.service';
 import {
@@ -32,6 +31,7 @@ import {
   ReportResponseDto,
   UpsertPdfSettingDto,
   PdfSettingResponseDto,
+  ReportQueryDto,
 } from './dto';
 
 @ApiBearerAuth()
@@ -44,8 +44,8 @@ export class ReportController {
   ) {}
 
   @Post()
-  @Roles('TEAM_LEADER', 'PENGAWAS', 'ADMIN')
-  @ApiOperation({ summary: 'Create a new report (TL/Pengawas/Admin)' })
+  @Roles('PETUGAS', 'TEAM_LEADER', 'PENGAWAS', 'ADMIN')
+  @ApiOperation({ summary: 'Create a new report' })
   @ApiResponse({ status: 201, type: ReportResponseDto })
   @ResponseMessage('Success create report')
   create(
@@ -63,7 +63,7 @@ export class ReportController {
   @ResponseMessage('Success get my reports')
   findMine(
     @CurrentUser('id') userId: string,
-    @Query() query: PageOptionsDto,
+    @Query() query: ReportQueryDto,
     @Req() req: Request,
   ) {
     const baseUrl = `${req.protocol}://${req.get('host')}`;
@@ -77,7 +77,7 @@ export class ReportController {
   @ResponseMessage('Success get team reports')
   findByTeams(
     @CurrentUser('id') userId: string,
-    @Query() query: PageOptionsDto,
+    @Query() query: ReportQueryDto,
     @Req() req: Request,
   ) {
     const baseUrl = `${req.protocol}://${req.get('host')}`;
@@ -121,7 +121,7 @@ export class ReportController {
   @ApiResponse({ status: 200, type: [ReportResponseDto] })
   @ApiResponse({ status: 403, description: 'Insufficient permissions' })
   @ResponseMessage('Success get all reports')
-  findAll(@Query() query: PageOptionsDto, @Req() req: Request) {
+  findAll(@Query() query: ReportQueryDto, @Req() req: Request) {
     const baseUrl = `${req.protocol}://${req.get('host')}`;
     return this.reportService.findAll(query, baseUrl);
   }
@@ -181,7 +181,7 @@ export class ReportController {
 
     res.set({
       'Content-Type': 'application/pdf',
-      'Content-Disposition': 'attachment; filename="preview-template.pdf"',
+      'Content-Disposition': 'inline; filename="preview-template.pdf"',
     });
 
     doc.pipe(res);
@@ -217,6 +217,7 @@ export class ReportController {
   @ApiResponse({ status: 200, description: 'PDF file stream' })
   async exportPdf(
     @Param('id') id: string,
+    @Query('preview') preview: string,
     @Req() req: Request,
     @Res() res: Response,
   ) {
@@ -229,6 +230,7 @@ export class ReportController {
       reportDate: report.reportDate,
       userName: report.userName || '',
       teamName: report.title,
+      formatLaporan: report.formatLaporan,
       weekNumber: report.weekNumber,
       deskripsiKegiatan: report.deskripsiKegiatan,
       kondisiCuaca: report.kondisiCuaca,
@@ -245,21 +247,30 @@ export class ReportController {
       tenagaPekerja: report.tenagaPekerja,
       tenagaKorlap: report.tenagaKorlap,
       lokasi: (report.lokasi || []).map((l) => ({
-        workLocationName: l.workLocationName || '',
-        workLocationAddress: l.workLocationAddress || '',
+        workLocationName: l.workLocationName || l.name || '',
+        workLocationAddress: l.workLocationAddress || l.alamatLengkap || '',
         kegiatan: l.kegiatan,
         panjang: l.panjang,
         lebar: l.lebar,
       })),
       photos: report.photos,
+      signatory1Name: report.signatory1Name,
+      signatory1Title: report.signatory1Title,
+      signatory2Name: report.signatory2Name,
+      signatory2Title: report.signatory2Title,
+      signatory3Name: report.signatory3Name,
+      signatory3Title: report.signatory3Title,
+      signatory4Name: report.signatory4Name,
+      signatory4Title: report.signatory4Title,
       createdAt: report.createdAt,
       updatedAt: report.updatedAt,
     });
 
     const filename = `laporan-${report.reportDate}.pdf`;
+    const disposition = preview === 'true' ? 'inline' : `attachment; filename="${filename}"`;
     res.set({
       'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="${filename}"`,
+      'Content-Disposition': disposition,
     });
 
     doc.pipe(res);
@@ -276,8 +287,8 @@ export class ReportController {
   }
 
   @Patch(':id')
-  @Roles('TEAM_LEADER', 'PENGAWAS', 'ADMIN')
-  @ApiOperation({ summary: 'Update report (TL/Pengawas/Admin)' })
+  @Roles('PETUGAS', 'TEAM_LEADER', 'PENGAWAS', 'ADMIN')
+  @ApiOperation({ summary: 'Update report' })
   @ApiParam({ name: 'id', description: 'Report UUID' })
   @ApiResponse({ status: 200, type: ReportResponseDto })
   @ResponseMessage('Success update report')
@@ -293,9 +304,9 @@ export class ReportController {
   }
 
   @Delete(':id')
-  @Roles('TEAM_LEADER', 'PENGAWAS', 'ADMIN')
+  @Roles('PETUGAS', 'TEAM_LEADER', 'PENGAWAS', 'ADMIN')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Delete report (TL/Pengawas/Admin)' })
+  @ApiOperation({ summary: 'Delete report' })
   @ApiParam({ name: 'id', description: 'Report UUID' })
   @ApiResponse({ status: 204, description: 'Report deleted' })
   @ResponseMessage('Success delete report')
