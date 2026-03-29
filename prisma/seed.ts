@@ -211,6 +211,42 @@ async function main() {
 
   console.log('Seeded pengawas user:', pengawas.email);
 
+  // 4e. Seed Pendamping Masyarakat users (PETUGAS role)
+  const pendampingUsers = [
+    { email: 'rizki.amalia@marlina.com', fullName: 'Rizki Amalia', phone: '081200000001' },
+    { email: 'sasqia.nabila@marlina.com', fullName: 'Sasqia Nabila F', phone: '081200000002' },
+    { email: 'inka.meyriska@marlina.com', fullName: 'Inka Meyriska', phone: '081200000003' },
+    { email: 'nepri.yanti@marlina.com', fullName: 'Nepri Yanti', phone: '081200000004' },
+    { email: 'venni.yulita@marlina.com', fullName: 'Venni Yulita', phone: '081200000005' },
+    { email: 'suci@marlina.com', fullName: 'Suci', phone: '081200000006' },
+    { email: 'bambang.tritunggal@marlina.com', fullName: 'Bambang Tri Tunggal', phone: '081200000007' },
+  ];
+
+  for (const p of pendampingUsers) {
+    const user = await prisma.user.upsert({
+      where: { email: p.email },
+      update: {},
+      create: {
+        email: p.email,
+        password: hashedPetugasPassword,
+        roleId: petugasRole.id,
+        emailVerifiedAt: new Date(),
+      },
+    });
+
+    await prisma.profile.upsert({
+      where: { userId: user.id },
+      update: {},
+      create: {
+        userId: user.id,
+        fullName: p.fullName,
+        phone: p.phone,
+      },
+    });
+
+    console.log('Seeded pendamping user:', user.email);
+  }
+
   // 5. Seed default operational hours (Mon-Fri 07:00-17:00)
   const days = [
     { dayOfWeek: 0, startTime: '07:00', endTime: '17:00', isActive: false }, // Minggu

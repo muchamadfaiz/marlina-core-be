@@ -21,11 +21,12 @@ COPY --from=build /app/dist ./dist
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/prisma ./prisma
 COPY package.json prisma.config.ts tsconfig.json ./
+COPY docker-entrypoint.sh ./
 
-RUN mkdir -p uploads
+RUN mkdir -p uploads && chmod +x docker-entrypoint.sh
 
 ENV NODE_ENV=production
 
 EXPOSE 3000
 
-CMD ["node", "dist/src/main"]
+ENTRYPOINT ["./docker-entrypoint.sh"]
