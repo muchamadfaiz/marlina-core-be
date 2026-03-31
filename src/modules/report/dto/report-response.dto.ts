@@ -23,6 +23,11 @@ export class ReportLokasiResponseDto {
   @ApiPropertyOptional() lebarBawah?: number;
   @ApiPropertyOptional() kedalaman?: number;
   @ApiPropertyOptional() sedimen?: number;
+  @ApiPropertyOptional() subDas?: string;
+  @ApiPropertyOptional() kendala?: string;
+  @ApiPropertyOptional() solusi?: string;
+  @ApiPropertyOptional() jenisBangunan?: string;
+  @ApiPropertyOptional() statusKegiatan?: string;
 }
 
 export class ReportResponseDto {

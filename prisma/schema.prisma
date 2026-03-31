@@ -265,7 +265,7 @@ model Report {
   kondisiCuaca      String?
   waktuMulai        String?
   waktuSelesai      String?
-  formatLaporan     String?  // trashboom, emergency, buset, alber
+  formatLaporan     String?  // trashboom, emergency, buset, alber, sosialisasi
 
   // Signatures (4 slots)
   signatory1Name    String?
@@ -340,6 +340,13 @@ model ReportLokasi {
   lebarBawah      Float?       // meter
   kedalaman       Float?       // meter
   sedimen         Float?       // meter
+
+  // Fields untuk format sosialisasi
+  subDas          String?      // e.g. "Seberang Ulu"
+  kendala         String?      // e.g. "Banjir"
+  solusi          String?      // e.g. "Mengajak wrg ikut gabung KMPS"
+  jenisBangunan   String?      // Jenis Bangunan yg Menghalangi, e.g. "Lainnya"
+  statusKegiatan  String?      // e.g. "Sosialisasi"
 
   createdAt       DateTime     @default(now())
 

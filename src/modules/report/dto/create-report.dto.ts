@@ -76,6 +76,32 @@ export class ReportLokasiDto {
   @Min(0)
   @Type(() => Number)
   sedimen?: number;
+
+  // Fields untuk format sosialisasi
+  @ApiPropertyOptional({ description: 'Sub DAS', example: 'Seberang Ulu' })
+  @IsOptional()
+  @IsString()
+  subDas?: string;
+
+  @ApiPropertyOptional({ description: 'Kendala', example: 'Banjir' })
+  @IsOptional()
+  @IsString()
+  kendala?: string;
+
+  @ApiPropertyOptional({ description: 'Solusi', example: 'Mengajak wrg ikut gabung KMPS' })
+  @IsOptional()
+  @IsString()
+  solusi?: string;
+
+  @ApiPropertyOptional({ description: 'Jenis Bangunan yg Menghalangi', example: 'Lainnya' })
+  @IsOptional()
+  @IsString()
+  jenisBangunan?: string;
+
+  @ApiPropertyOptional({ description: 'Status Kegiatan', example: 'Sosialisasi' })
+  @IsOptional()
+  @IsString()
+  statusKegiatan?: string;
 }
 
 export class CreateReportDto {
