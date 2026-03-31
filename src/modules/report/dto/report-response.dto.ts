@@ -23,6 +23,8 @@ export class ReportLokasiResponseDto {
   @ApiPropertyOptional() lebarBawah?: number;
   @ApiPropertyOptional() kedalaman?: number;
   @ApiPropertyOptional() sedimen?: number;
+  @ApiPropertyOptional() latitude?: number;
+  @ApiPropertyOptional() longitude?: number;
   @ApiPropertyOptional() subDas?: string;
   @ApiPropertyOptional() kendala?: string;
   @ApiPropertyOptional() solusi?: string;
@@ -48,6 +50,7 @@ export class ReportResponseDto {
   @ApiPropertyOptional() waktuMulai?: string;
   @ApiPropertyOptional() waktuSelesai?: string;
   @ApiPropertyOptional() formatLaporan?: string;
+  @ApiPropertyOptional() namaTim?: string;
 
   @ApiPropertyOptional() peralatanCangkul?: number;
   @ApiPropertyOptional() peralatanParang?: number;

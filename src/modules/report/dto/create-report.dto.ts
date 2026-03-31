@@ -77,6 +77,19 @@ export class ReportLokasiDto {
   @Type(() => Number)
   sedimen?: number;
 
+  // Koordinat lokasi manual
+  @ApiPropertyOptional({ description: 'Latitude', example: -2.991114 })
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  latitude?: number;
+
+  @ApiPropertyOptional({ description: 'Longitude', example: 104.770945 })
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  longitude?: number;
+
   // Fields untuk format sosialisasi
   @ApiPropertyOptional({ description: 'Sub DAS', example: 'Seberang Ulu' })
   @IsOptional()
@@ -164,10 +177,15 @@ export class CreateReportDto {
   @IsString()
   waktuSelesai?: string;
 
-  @ApiPropertyOptional({ example: 'trashboom' })
+  @ApiPropertyOptional({ example: 'sosialisasi' })
   @IsOptional()
   @IsString()
   formatLaporan?: string;
+
+  @ApiPropertyOptional({ description: 'Nama Tim', example: 'SUCI dan VENNY' })
+  @IsOptional()
+  @IsString()
+  namaTim?: string;
 
   // Alat Berat (for formatLaporan = 'alber')
   @ApiPropertyOptional({ example: 'PC 75' }) @IsOptional() @IsString() alatBeratNama?: string;

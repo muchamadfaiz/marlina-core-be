@@ -266,6 +266,7 @@ model Report {
   waktuMulai        String?
   waktuSelesai      String?
   formatLaporan     String?  // trashboom, emergency, buset, alber, sosialisasi
+  namaTim           String?  // e.g. "SUCI dan VENNY"
 
   // Signatures (4 slots)
   signatory1Name    String?
@@ -340,6 +341,10 @@ model ReportLokasi {
   lebarBawah      Float?       // meter
   kedalaman       Float?       // meter
   sedimen         Float?       // meter
+
+  // Koordinat lokasi manual
+  latitude        Float?
+  longitude       Float?
 
   // Fields untuk format sosialisasi
   subDas          String?      // e.g. "Seberang Ulu"
