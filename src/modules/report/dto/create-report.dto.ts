@@ -77,6 +77,12 @@ export class ReportLokasiDto {
   @Type(() => Number)
   sedimen?: number;
 
+  // Legacy field (ignored, kept for backward compatibility)
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  jenis?: string;
+
   // Koordinat lokasi manual
   @ApiPropertyOptional({ description: 'Latitude', example: -2.991114 })
   @IsOptional()
