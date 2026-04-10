@@ -69,6 +69,9 @@ export class TeamResponseDto {
   @ApiPropertyOptional()
   batasPulangCepat: string | null;
 
+  @ApiPropertyOptional()
+  formatLaporan: string | null;
+
   @ApiProperty({ type: [TeamMemberResponseDto] })
   members: TeamMemberResponseDto[];
 

@@ -79,4 +79,9 @@ export class CreateTeamDto {
   @IsString()
   @IsOptional()
   nipAsn?: string;
+
+  @ApiPropertyOptional({ description: 'Format Laporan', example: 'Drainase' })
+  @IsString()
+  @IsOptional()
+  formatLaporan?: string;
 }

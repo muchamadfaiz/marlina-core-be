@@ -30,6 +30,7 @@ export class TeamService {
       jamPulang: team.jamPulang || null,
       batasTelat: team.batasTelat || null,
       batasPulangCepat: team.batasPulangCepat || null,
+      formatLaporan: team.formatLaporan || null,
       isActive: team.isActive,
       members: (team.members || []).map((m: any) => ({
         id: m.id,
@@ -70,6 +71,7 @@ export class TeamService {
         jamPulang: dto.jamPulang || null,
         batasTelat: dto.batasTelat || null,
         batasPulangCepat: dto.batasPulangCepat || null,
+        formatLaporan: dto.formatLaporan || null,
         members: dto.memberIds?.length
           ? {
               create: dto.memberIds.map((userId) => ({ userId })),
@@ -160,6 +162,7 @@ export class TeamService {
         ...(dto.jamPulang !== undefined && { jamPulang: dto.jamPulang || null }),
         ...(dto.batasTelat !== undefined && { batasTelat: dto.batasTelat || null }),
         ...(dto.batasPulangCepat !== undefined && { batasPulangCepat: dto.batasPulangCepat || null }),
+        ...(dto.formatLaporan !== undefined && { formatLaporan: dto.formatLaporan || null }),
       },
       include: this.includeRelations,
     });

@@ -181,6 +181,7 @@ model Team {
   jamPulang        String?  // e.g. "15:00"
   batasTelat       String?  // e.g. "07:15"
   batasPulangCepat String?  // e.g. "14:30"
+  formatLaporan    String?  // e.g. "Drainase"
 
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
