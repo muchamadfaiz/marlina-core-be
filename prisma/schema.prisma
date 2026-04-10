@@ -170,6 +170,12 @@ model Team {
   divisionId  String?
   division    Division? @relation(fields: [divisionId], references: [id])
 
+  // Team config fields (names for report signatories)
+  pengawasName String?
+  qcName       String?
+  korlapAsn    String?
+  nipAsn       String?
+
   // Team-specific operational hours (override global)
   jamMasuk         String?  // e.g. "07:00"
   jamPulang        String?  // e.g. "15:00"

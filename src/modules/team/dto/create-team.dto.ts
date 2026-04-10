@@ -59,4 +59,24 @@ export class CreateTeamDto {
   @IsString()
   @IsOptional()
   batasPulangCepat?: string;
+
+  @ApiPropertyOptional({ description: 'Nama Pengawas (override)' })
+  @IsString()
+  @IsOptional()
+  pengawasName?: string;
+
+  @ApiPropertyOptional({ description: 'Nama QC' })
+  @IsString()
+  @IsOptional()
+  qcName?: string;
+
+  @ApiPropertyOptional({ description: 'Nama Korlap ASN' })
+  @IsString()
+  @IsOptional()
+  korlapAsn?: string;
+
+  @ApiPropertyOptional({ description: 'NIP ASN' })
+  @IsString()
+  @IsOptional()
+  nipAsn?: string;
 }

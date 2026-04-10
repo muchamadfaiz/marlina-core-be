@@ -39,6 +39,15 @@ export class TeamResponseDto {
   @ApiPropertyOptional()
   pengawasName: string | null;
 
+  @ApiPropertyOptional()
+  qcName: string | null;
+
+  @ApiPropertyOptional()
+  korlapAsn: string | null;
+
+  @ApiPropertyOptional()
+  nipAsn: string | null;
+
   @ApiProperty()
   isActive: boolean;
 

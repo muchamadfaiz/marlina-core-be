@@ -36,6 +36,15 @@ export class ReportResponseDto {
   @ApiProperty() id: string;
   @ApiProperty() userId: string;
   @ApiPropertyOptional() userName?: string;
+  @ApiPropertyOptional() creatorTeam?: {
+    id: string;
+    name: string;
+    leaderName?: string;
+    qcName?: string;
+    pengawasName?: string;
+    korlapAsn?: string;
+    nipAsn?: string;
+  };
   @ApiPropertyOptional() divisionName?: string;
   @ApiProperty() title: string;
   @ApiProperty() content: string;

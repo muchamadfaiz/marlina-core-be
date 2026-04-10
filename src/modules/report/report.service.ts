@@ -20,7 +20,24 @@ export class ReportService {
     user: {
       include: {
         profile: true,
-        teamMemberships: { include: { team: { include: { division: true } } }, take: 1 },
+        teamMemberships: {
+          include: {
+            team: {
+              include: {
+                division: true,
+                leader: { include: { profile: true } },
+              },
+            },
+          },
+          take: 1,
+        },
+        ledTeams: {
+          include: {
+            division: true,
+            leader: { include: { profile: true } },
+          },
+          take: 1,
+        },
       },
     },
     approvedBy: { include: { profile: true } },
@@ -76,11 +93,21 @@ export class ReportService {
   }
 
   private mapToResponse(report: any, baseUrl: string, attendancePhotos?: any): ReportResponseDto {
+    const creatorTeam = report.user?.teamMemberships?.[0]?.team || report.user?.ledTeams?.[0];
     return {
       id: report.id,
       userId: report.userId,
       userName: report.user?.profile?.fullName || report.user?.email,
-      divisionName: report.user?.teamMemberships?.[0]?.team?.division?.name || undefined,
+      creatorTeam: creatorTeam ? {
+        id: creatorTeam.id,
+        name: creatorTeam.name,
+        leaderName: creatorTeam.leader?.profile?.fullName || creatorTeam.leader?.email,
+        qcName: creatorTeam.qcName,
+        pengawasName: creatorTeam.pengawasName,
+        korlapAsn: creatorTeam.korlapAsn,
+        nipAsn: creatorTeam.nipAsn,
+      } : undefined,
+      divisionName: report.user?.ledTeams?.[0]?.division?.name || report.user?.teamMemberships?.[0]?.team?.division?.name || undefined,
       title: report.title,
       content: report.content,
       status: report.status,
