@@ -74,8 +74,8 @@ export class TeamController {
   }
 
   @Patch(':id')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Update team (Admin only)' })
+  @Roles('ADMIN', 'PENGAWAS', 'TEAM_LEADER')
+  @ApiOperation({ summary: 'Update team (Admin, Pengawas, & Team Leader)' })
   @ApiParam({ name: 'id', description: 'Team UUID' })
   @ApiResponse({ status: 200, type: TeamResponseDto })
   @ResponseMessage('Success update team')
