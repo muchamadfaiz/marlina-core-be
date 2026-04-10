@@ -48,6 +48,18 @@ export class TeamResponseDto {
   @ApiPropertyOptional()
   divisionName: string | null;
 
+  @ApiPropertyOptional()
+  jamMasuk: string | null;
+
+  @ApiPropertyOptional()
+  jamPulang: string | null;
+
+  @ApiPropertyOptional()
+  batasTelat: string | null;
+
+  @ApiPropertyOptional()
+  batasPulangCepat: string | null;
+
   @ApiProperty({ type: [TeamMemberResponseDto] })
   members: TeamMemberResponseDto[];
 

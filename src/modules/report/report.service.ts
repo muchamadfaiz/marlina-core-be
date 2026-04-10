@@ -268,7 +268,17 @@ export class ReportService {
   private buildReportWhere(query: ReportQueryDto, extra: Record<string, any> = {}) {
     const andConditions: any[] = [];
 
-    if (query.date) {
+    if (query.startDate && query.endDate) {
+      const start = new Date(`${query.startDate}T00:00:00.000Z`);
+      const end = new Date(`${query.endDate}T23:59:59.999Z`);
+      andConditions.push({ reportDate: { gte: start, lte: end } });
+    } else if (query.startDate) {
+      const start = new Date(`${query.startDate}T00:00:00.000Z`);
+      andConditions.push({ reportDate: { gte: start } });
+    } else if (query.endDate) {
+      const end = new Date(`${query.endDate}T23:59:59.999Z`);
+      andConditions.push({ reportDate: { lte: end } });
+    } else if (query.date) {
       const start = new Date(`${query.date}T00:00:00.000Z`);
       const end = new Date(`${query.date}T23:59:59.999Z`);
       andConditions.push({ reportDate: { gte: start, lte: end } });

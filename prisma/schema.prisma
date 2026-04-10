@@ -170,6 +170,12 @@ model Team {
   divisionId  String?
   division    Division? @relation(fields: [divisionId], references: [id])
 
+  // Team-specific operational hours (override global)
+  jamMasuk         String?  // e.g. "07:00"
+  jamPulang        String?  // e.g. "15:00"
+  batasTelat       String?  // e.g. "07:15"
+  batasPulangCepat String?  // e.g. "14:30"
+
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

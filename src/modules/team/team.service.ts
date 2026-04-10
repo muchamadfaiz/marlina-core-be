@@ -23,6 +23,10 @@ export class TeamService {
       pengawasName: team.pengawas?.profile?.fullName || team.pengawas?.email || null,
       divisionId: team.divisionId || null,
       divisionName: team.division?.name || null,
+      jamMasuk: team.jamMasuk || null,
+      jamPulang: team.jamPulang || null,
+      batasTelat: team.batasTelat || null,
+      batasPulangCepat: team.batasPulangCepat || null,
       isActive: team.isActive,
       members: (team.members || []).map((m: any) => ({
         id: m.id,
@@ -55,6 +59,10 @@ export class TeamService {
         leaderId: dto.leaderId,
         pengawasId: dto.pengawasId || null,
         divisionId: dto.divisionId || null,
+        jamMasuk: dto.jamMasuk || null,
+        jamPulang: dto.jamPulang || null,
+        batasTelat: dto.batasTelat || null,
+        batasPulangCepat: dto.batasPulangCepat || null,
         members: dto.memberIds?.length
           ? {
               create: dto.memberIds.map((userId) => ({ userId })),
@@ -137,6 +145,10 @@ export class TeamService {
         leaderId: dto.leaderId,
         ...(dto.pengawasId !== undefined && { pengawasId: dto.pengawasId || null }),
         ...(dto.divisionId !== undefined && { divisionId: dto.divisionId || null }),
+        ...(dto.jamMasuk !== undefined && { jamMasuk: dto.jamMasuk || null }),
+        ...(dto.jamPulang !== undefined && { jamPulang: dto.jamPulang || null }),
+        ...(dto.batasTelat !== undefined && { batasTelat: dto.batasTelat || null }),
+        ...(dto.batasPulangCepat !== undefined && { batasPulangCepat: dto.batasPulangCepat || null }),
       },
       include: this.includeRelations,
     });

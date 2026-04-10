@@ -8,6 +8,16 @@ export class ReportQueryDto extends PageOptionsDto {
   @IsString()
   date?: string;
 
+  @ApiPropertyOptional({ description: 'Filter by start date (YYYY-MM-DD)' })
+  @IsOptional()
+  @IsString()
+  startDate?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by end date (YYYY-MM-DD)' })
+  @IsOptional()
+  @IsString()
+  endDate?: string;
+
   @ApiPropertyOptional({ description: 'Filter by status', enum: ['draft', 'submitted', 'approved', 'rejected'] })
   @IsOptional()
   @IsString()

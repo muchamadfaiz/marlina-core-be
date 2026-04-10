@@ -39,4 +39,24 @@ export class CreateTeamDto {
   @IsUUID()
   @IsOptional()
   divisionId?: string;
+
+  @ApiPropertyOptional({ example: '07:00', description: 'Team start time (HH:mm)' })
+  @IsString()
+  @IsOptional()
+  jamMasuk?: string;
+
+  @ApiPropertyOptional({ example: '15:00', description: 'Team end time (HH:mm)' })
+  @IsString()
+  @IsOptional()
+  jamPulang?: string;
+
+  @ApiPropertyOptional({ example: '07:15', description: 'Late threshold (HH:mm)' })
+  @IsString()
+  @IsOptional()
+  batasTelat?: string;
+
+  @ApiPropertyOptional({ example: '14:30', description: 'Early leave threshold (HH:mm)' })
+  @IsString()
+  @IsOptional()
+  batasPulangCepat?: string;
 }

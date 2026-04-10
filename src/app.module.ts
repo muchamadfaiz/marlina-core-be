@@ -33,7 +33,7 @@ import { RolesGuard } from './common';
 
         return {
           pinoHttp: {
-            level: isDev ? 'debug' : nodeEnv === 'staging' ? 'info' : 'warn',
+            level: isDev ? 'debug' : 'info',
             transport: isDev
               ? { target: 'pino-pretty', options: { colorize: true } }
               : undefined,

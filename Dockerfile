@@ -21,7 +21,7 @@ COPY --from=build /app/dist ./dist
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/prisma ./prisma
 COPY package.json prisma.config.ts tsconfig.json ./
-RUN mkdir -p uploads
+RUN mkdir -p uploads logs
 
 ENV NODE_ENV=production
 
