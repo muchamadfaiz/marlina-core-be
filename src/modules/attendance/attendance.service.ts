@@ -41,34 +41,30 @@ export class AttendanceService {
     userId: string,
     submittedById: string,
   ) {
-    // 1. Check operational hour for today
     const now = new Date();
-    const dayOfWeek = now.getDay(); // 0=Sunday, 6=Saturday
-    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
-    const operationalHour = await this.prisma.operationalHour.findUnique({
-      where: { dayOfWeek },
-    });
-
-    if (!operationalHour || !operationalHour.isActive) {
-      throw new BadRequestException(
-        'Attendance is not allowed today (non-operational day)',
-      );
-    }
-
-    // Allow attendance 15 minutes before operational hours start
-    const [startH, startM] = operationalHour.startTime.split(':').map(Number);
-    const earlyMinutes = startH * 60 + startM - 15;
-    const earlyStartTime = `${String(Math.floor(earlyMinutes / 60)).padStart(2, '0')}:${String(earlyMinutes % 60).padStart(2, '0')}`;
-
-    if (
-      currentTime < earlyStartTime ||
-      currentTime > operationalHour.endTime
-    ) {
-      throw new BadRequestException(
-        `Attendance is only allowed between ${earlyStartTime} - ${operationalHour.endTime}`,
-      );
-    }
+    // 1. Check operational hour for today (DISABLED — absen fleksibel kapan saja)
+    // const dayOfWeek = now.getDay();
+    // const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    // const operationalHour = await this.prisma.operationalHour.findUnique({
+    //   where: { dayOfWeek },
+    // });
+    // if (!operationalHour || !operationalHour.isActive) {
+    //   throw new BadRequestException(
+    //     'Attendance is not allowed today (non-operational day)',
+    //   );
+    // }
+    // const [startH, startM] = operationalHour.startTime.split(':').map(Number);
+    // const earlyMinutes = startH * 60 + startM - 15;
+    // const earlyStartTime = `${String(Math.floor(earlyMinutes / 60)).padStart(2, '0')}:${String(earlyMinutes % 60).padStart(2, '0')}`;
+    // if (
+    //   currentTime < earlyStartTime ||
+    //   currentTime > operationalHour.endTime
+    // ) {
+    //   throw new BadRequestException(
+    //     `Attendance is only allowed between ${earlyStartTime} - ${operationalHour.endTime}`,
+    //   );
+    // }
 
     // 2. Check duplicate attendance for today
     const startOfDay = new Date(now);
